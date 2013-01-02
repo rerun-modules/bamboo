@@ -1,0 +1,21 @@
+<!-- make this a config package file -->
+<application-configuration>
+  <setupStep>setupDefaultGeneral</setupStep>
+  <setupType>install</setupType>
+  <buildNumber>3403</buildNumber>
+  <properties>
+    <property name="bamboo.artifacts.directory">${bambooHome}/artifacts</property>
+    <property name="bamboo.config.directory">${bambooHome}/xml-data/configuration</property>
+    <property name="bamboo.project.directory">${bambooHome}/xml-data/builds</property>
+    <property name="buildWorkingDir">${bambooHome}/xml-data/build-dir</property>
+    <property name="daily.backup.dir">${bambooHome}/backups</property>
+    <property name="lucene.index.dir">${bambooHome}/index</property>
+<!--
+    <property name="serverId">B0TP-0X4V-D61A-1R2D</property>
+-->
+    <property name="webwork.multipart.saveDir">${bambooHome}/temp</property>
+<!--
+    <property name="license.string">AAABFA0ODAoPeNptkM1OwzAQhO9+CktccWUbQqGSD23sQ6T8KQmIAxfXLNRS40R2EtG3J22pEBXS7 mE9mm/We9PsRizBYL7EjK0itqIRjusGc8o4khCMt/1gOyc2ut12HVZuAN97G+BthdWk96M+yigf2 y344uM5gA+CRyj2cFKkHkAcaWQu/oh+PWLwI6DtibvQZrATnJ8ybecUp50B9dVbf7gw7ghlhC8vn tQacAHUuz3hVN6oqqySWqHCf2pnwzlGNgWuu/14HMItTpxZoBr8BD6RYkObktDX+xciH9iasIpLV KtczE1Szhhl0dNVXnPoIdctiLjIMlXFyTpFP9IMTBP5x3tZ8t+PlKM3Ox3g+kjfPLaBIDAsAhQEI Y2bIBLrWyZ2AB/cvUq7hqC3nQIUGs2RS6TpsoWUDMoMdozmuAXv8lA=X02e2</property>
+-->
+  </properties>
+</application-configuration>

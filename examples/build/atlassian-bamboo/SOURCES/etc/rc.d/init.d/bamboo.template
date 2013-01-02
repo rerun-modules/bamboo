@@ -1,0 +1,38 @@
+#!/bin/sh
+#
+# /etc/init.d/bamboo -- startup script for Atlassian Bamboo
+#
+### BEGIN INIT INFO
+# Provides:          bamboo
+# Required-Start:    $local_fs $remote_fs $network
+# Required-Stop:     $local_fs $remote_fs $network
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Start Bamboo.
+# Description:       Start Atlassian Bamboo build server.
+### END INIT INFO
+ 
+BAMBOO_HOME=@BAMBOO_HOME@
+BAMBOO_INSTALL=@BAMBOO_INSTALL@
+BAMBOO_USER=@BAMBOO_USER@
+ 
+export BAMBOO_HOME
+NAME=@NAME@
+BPID=${BAMBOO_INSTALL}/${NAME}.pid
+PID=/var/run/${NAME}.pid
+cd ${BAMBOO_INSTALL}
+if [ _$1 = _condrestart ]; then
+	su - ${BAMBOO_USER} -c "cd ${BAMBOO_INSTALL} &&	${BAMBOO_INSTALL}/bamboo.sh stop &&	${BAMBOO_INSTALL}/bamboo.sh start"
+else
+	su - ${BAMBOO_USER} -c "cd ${BAMBOO_INSTALL} &&	${BAMBOO_INSTALL}/bamboo.sh $@"
+fi
+RC=$?
+ 
+if [ -f $BPID ]; then
+	cp -- $BPID $PID
+        touch /var/lock/${NAME}
+else
+	rm -- $PID /var/lock/${NAME} 2>/dev/null
+fi
+ 
+exit $RC

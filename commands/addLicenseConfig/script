@@ -1,0 +1,142 @@
+#!/usr/bin/env bash
+
+# To implement this command, edit the "Command implementation" section below. 
+
+# Usage
+# -----
+
+# Comments prefixed with `#/` are managed by stubbs.
+# The `command` and `usage` comments describe the command
+# and show its options.
+# 
+#/ command: bamboo:addLicenseConfig: "Supports adding the serverId and corresponding license properties to the bamboo.cfg.xml file"
+#/ usage: rerun bamboo:addLicenseConfig  --serverId <>  --license <> 
+
+# Load common functions
+# ---------------------
+
+# Load the function library for this module.
+# This loads rerun functions, too.
+. $RERUN_MODULE_DIR/lib/functions.sh addLicenseConfig || { 
+  echo >&2 "Failed loading function library." ; exit 1 ; 
+}
+
+# Error handling
+# ---------------
+
+# This script is designed to _fail-fast_.
+
+# Trap errors and exit. The call to `rerun_die` will print the
+# the error message and exit with the error command exit status. 
+
+trap 'rerun_die $? "*** command failed: bamboo:addLicenseConfig. ***"' ERR
+
+# Run [set] `nounset` to treat unset variables as errors. Set [pipefail]
+# so a pipeline return status is the value of the last 
+# (rightmost) command to exit with non-zero status.
+#
+# [set]: http://ss64.com/bash/set.html
+# [pipefail]: http://www.gnu.org/software/bash/manual/html_node/Pipelines.html
+
+set -o nounset -o pipefail
+
+# Command variables
+# -----------------
+
+# This command script can access the following variables
+# declared by `rerun` or by the option parser function.
+
+#/ rerun-variables: RERUN, RERUN_VERSION, RERUN_MODULES, RERUN_MODULE_DIR
+#/ option-variables: SERVERID LICENSE
+
+# The `rerun_options_parse` function processes the command line
+# arguments. Each accepted command line flag results in setting 
+# one the corresponding option variables.
+
+rerun_options_parse "$@"
+
+
+# Command implementation
+# ----------------------
+
+#SERVERID
+#LICENSE
+
+BAMBOO_CFG_XML="${BAMBOO_HOME}/bamboo.cfg.xml"
+
+if [ ! -f ${BAMBOO_CFG_XML} ]
+then
+   echo "bamboo configuraiton: ${BAMBOO_CFG_XML} does not exist, cannot continue" 1>&2
+   exit 1
+fi
+
+#add
+#<application-configuration>
+#  <properties>
+#    <property name="license.string">AAABFA0ODAoPeNptkM1OwzAQhO9+CktccWUbQqGSD23sQ6T8KQmIAxfXLNRS40R2EtG3J22pEBXS7 mE9mm/We9PsRizBYL7EjK0itqIRjusGc8o4khCMt/1gOyc2ut12HVZuAN97G+BthdWk96M+yigf2 y344uM5gA+CRyj2cFKkHkAcaWQu/oh+PWLwI6DtibvQZrATnJ8ybecUp50B9dVbf7gw7ghlhC8vn tQacAHUuz3hVN6oqqySWqHCf2pnwzlGNgWuu/14HMItTpxZoBr8BD6RYkObktDX+xciH9iasIpLV KtczE1Szhhl0dNVXnPoIdctiLjIMlXFyTpFP9IMTBP5x3tZ8t+PlKM3Ox3g+kjfPLaBIDAsAhQEI Y2bIBLrWyZ2AB/cvUq7hqC3nQIUGs2RS6TpsoWUDMoMdozmuAXv8lA=X02e2</property>
+#    <property name="serverId">B0TP-0X4V-D61A-1R2D</property>
+#/application-configuration/properties/property
+
+
+XMLSTARLET=xmlstarlet
+xmlTmp1=$(mktemp)
+xmlTmp2=$(mktemp)
+xmlTmp3=$(mktemp)
+
+chmod 644 "${xmlTmp1}" "${xmlTmp2}" "${xmlTmp3}"
+
+#
+# check if the specific property name exists already
+# if it exists then DELETE it and re-CREATE it.
+#
+if $XMLSTARLET sel  -t -m "/application-configuration/properties/property[@name='license.string']/@name"  -v . "${BAMBOO_CFG_XML}" >/dev/null
+then
+   $XMLSTARLET   ed -d "/application-configuration/properties/property[@name='license.string']" "${BAMBOO_CFG_XML}" \
+   | $XMLSTARLET fo > "${xmlTmp1}"
+else
+   cp "${BAMBOO_CFG_XML}" "${xmlTmp1}"
+fi
+
+if $XMLSTARLET sel  -t -m "/application-configuration/properties/property[@name='serverId']/@name"  -v . "${xmlTmp1}" >/dev/null
+then
+   $XMLSTARLET   ed -d "/application-configuration/properties/property[@name='serverId']" "${xmlTmp1}" \
+   | $XMLSTARLET fo > "${xmlTmp2}"
+else
+   cp "${xmlTmp1}" "${xmlTmp2}"
+fi
+
+
+#
+# create specific temporary propertyXXXTMP elements, the value, and attribute name/value.
+# Then rename the elements back to their correct "property" name
+#
+$XMLSTARLET ed \
+    -s /application-configuration/properties \
+       -t elem -n propertyLicenseStringTMP -v "${LICENSE}" \
+       -s //propertyLicenseStringTMP -t attr -n name -v "license.string" \
+    -s /application-configuration/properties \
+       -t elem -n propertyServerIdTMP -v "${SERVERID}" \
+       -s //propertyServerIdTMP -t attr -n name -v "serverId" \
+    -r //propertyLicenseStringTMP -v property \
+    -r //propertyServerIdTMP -v property \
+        "${xmlTmp2}" | $XMLSTARLET fo > ${xmlTmp3}
+
+#
+# if checksum differs, overwrite
+#
+if ! cmp -s "${xmlTmp3}" "${BAMBOO_CFG_XML}"
+then
+   if ! sudo -u bamboo cp "${xmlTmp3}" "${BAMBOO_CFG_XML}"
+   then
+      echo "unable to overwrite ${BAMBOO_CFG_XML}" 1>&2
+      exit 1
+   fi
+else
+   echo "WARNING, ${BAMBOO_CFG_XML} appears unchanged, will not overwrite" 1>&2
+fi
+
+rm -f "${xmlTmp1}" "${xmlTmp2}" "${xmlTmp3}"
+
+# Done. Exit with last command exit status.
+exit $?
+
